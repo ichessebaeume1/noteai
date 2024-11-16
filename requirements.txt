@@ -1,0 +1,7 @@
+flask~=3.0.3
+sounddevice~=0.5.1
+scipy~=1.14.1
+torch~=2.5.1+cu121
+transformers~=4.46.1
+sentence-transformers~=3.2.1
+openai-whisper~=20240930

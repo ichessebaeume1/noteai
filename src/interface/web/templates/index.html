@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text with Summarization</title>
+</head>
+<body>
+    <h1>Speech-to-Text Summarizer</h1>
+    <label for="topic">Enter Topic for Summary:</label>
+    <input type="text" id="topic" placeholder="Enter topic here...">
+    <br><br>
+
+    <label for="language">Select Language:</label>
+    <select id="language">
+        <option value="en-US">English (United States)</option>
+        <option value="es-ES">Spanish (Spain)</option>
+        <option value="fr-FR">French (France)</option>
+        <option value="de-DE">German (Germany)</option>
+        <option value="it-IT">Italian (Italy)</option>
+        <!-- Add more language options as needed -->
+    </select>
+    <br><br>
+
+    <button onclick="startRecognition()">Start Speech Recognition</button>
+    <button onclick="stopRecognition()">Stop Speech Recognition</button>
+    <div id="transcription"></div>
+    <div id="summary"></div>
+
+    <script>
+        let recognition;
+        let isRecognizing = false;
+
+        function startRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert('Your browser does not support speech recognition.');
+                return;
+            }
+
+            // Get topic and language from user inputs
+            const topic = document.getElementById('topic').value;
+            const language = document.getElementById('language').value;
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = language;  // Set the language dynamically
+
+            recognition.onstart = () => {
+                isRecognizing = true;
+                console.log("Speech recognition started.");
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('transcription').innerText = transcript;
+
+                // Send the transcript to the server for filtering and summarization
+                sendToServer(transcript, topic);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+            };
+
+            recognition.onend = () => {
+                isRecognizing = false;
+                console.log("Speech recognition ended.");
+            };
+
+            recognition.start();
+        }
+
+        function stopRecognition() {
+            if (isRecognizing && recognition) {
+                recognition.stop();
+            }
+        }
+
+        function sendToServer(text, topic) {
+            fetch('/process-transcription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transcription: text, topic: topic }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('summary').innerText = "Summary: " + data.summary;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
